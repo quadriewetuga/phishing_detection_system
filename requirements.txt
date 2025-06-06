@@ -1,0 +1,7 @@
+# List of required Python packages
+streamlit
+pandas
+scikit-learn
+joblib
+pymongo
+dnspython
