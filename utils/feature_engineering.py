@@ -57,10 +57,11 @@ def extract_features(url):
     features['path_extension'] = 1 if re.search(r'\.\w{1,4}$', path) else 0
     features['nb_redirection'] = url.count('//') - 1
     features['nb_external_redirection'] = 0  # Placeholder
+
+    # ✅ FIXED THESE LINES WITH RAW STRINGS
     words_raw = re.split(r'\W+', url)
     words_host = re.split(r'\W+', hostname)
     words_path = re.split(r'\W+', path)
-
 
     def safe_stats(words):
         lengths = [len(w) for w in words if w]

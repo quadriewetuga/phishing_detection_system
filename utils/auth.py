@@ -1,37 +1,41 @@
-# utils/auth.py
-
-import hashlib
-from pymongo import MongoClient
 import streamlit as st
+from pymongo import MongoClient
+import hashlib
 
-# Secure MongoDB connection using secrets
-MONGO_URI = st.secrets["mongo"]["uri"]
-DB_NAME = "phishing_app"
-
-client = MongoClient(MONGO_URI)
-db = client[DB_NAME]
+# Connect to MongoDB Atlas
+client = MongoClient(st.secrets["mongo"]["uri"])
+db = client["phishing_app"]
 users_collection = db["users"]
 
 def hash_password(password):
-    """Hashes the password using SHA-256."""
     return hashlib.sha256(password.encode()).hexdigest()
 
-def signup_user(username, password):
-    """Registers a new user if the username doesn't already exist."""
+def login_user_flexible(identifier, password):
+    """Login with either username or email."""
+    hashed_pw = hash_password(password)
+    user = users_collection.find_one({
+        "$or": [{"username": identifier}, {"email": identifier}],
+        "password": hashed_pw
+    })
+    if user:
+        return True, "Login successful", user["username"]
+    return False, "Invalid username/email or password"
+
+def register_user(email, username, password):
+    # Check if email already exists
+    if users_collection.find_one({"email": email}):
+        return False, "An account already exists with this email."
+
+    # Check if username already exists
     if users_collection.find_one({"username": username}):
-        return False, "Username already exists"
+        return False, "Username is already taken."
 
     hashed_pw = hash_password(password)
-    users_collection.insert_one({"username": username, "password": hashed_pw})
-    return True, "Signup successful"
+    user_data = {
+        "email": email,
+        "username": username,
+        "password": hashed_pw
+    }
 
-def login_user(username, password):
-    """Authenticates an existing user."""
-    user = users_collection.find_one({"username": username})
-    if not user:
-        return False, "User not found"
-
-    hashed_pw = hash_password(password)
-    if hashed_pw == user["password"]:
-        return True, "Login successful"
-    return False, "Incorrect password"
+    users_collection.insert_one(user_data)
+    return True, "User registered successfully"
