@@ -7,3 +7,4 @@ pymongo
 dnspython
 streamlit-extras
 plotly
+python-whois
